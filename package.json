@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "open": "open-cli \"https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in=202002&crn_in=31568\""
   },
   "author": "",
   "license": "ISC",
@@ -14,6 +14,7 @@
     "cheerio": "^1.0.0-rc.3",
     "gmail-send": "^1.8.10",
     "node-notifier": "^6.0.0",
+    "open-cli": "^5.0.0",
     "selenium-webdriver": "^4.0.0-alpha.5"
   },
   "devDependencies": {
