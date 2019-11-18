@@ -11,6 +11,7 @@ const {
   setIntervalImmediately
 } = require('./utils');
 
+const INTERVAL = 30000; // half a min
 const URL = 'https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in=202002&crn_in=31568';
 let data = null;
 
@@ -62,7 +63,7 @@ async function main(resumeFile, config) {
   // initial data
   data = await getClassNumbers();
 
-  setIntervalImmediately(checkSite, 60000);
+  setIntervalImmediately(checkSite, INTERVAL);
   // setIntervalImmediately(checkSite, 1500);
 }
 
