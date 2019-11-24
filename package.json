@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "open": "open-cli \"https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in=202002&crn_in=31568\""
+    "lint": "eslint src/",
+    "start": "node src/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -14,10 +14,11 @@
     "cheerio": "^1.0.0-rc.3",
     "gmail-send": "^1.8.10",
     "node-notifier": "^6.0.0",
-    "open-cli": "^5.0.0",
+    "open": "^7.0.0",
     "selenium-webdriver": "^4.0.0-alpha.5"
   },
   "devDependencies": {
-    "concurrently": "^5.0.0"
+    "concurrently": "^5.0.0",
+    "eslint": "^6.7.0"
   }
 }

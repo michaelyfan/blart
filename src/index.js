@@ -1,70 +1,86 @@
-/*
-Some requirements:
-never stop retrying. if fail (ex. internet loss), just keep retrying
- */
-
-const axios = require('axios');
-const cheerio = require('cheerio');
-const fs = require('fs');
-const notifier = require('node-notifier');
-const { 
-  setIntervalImmediately
+const { getClassNumbers } = require('./api');
+const {
+  openLink,
+  sendNotification
 } = require('./utils');
 
-const INTERVAL = 30000; // half a min
 const URL = 'https://oscar.gatech.edu/pls/bprod/bwckschd.p_disp_detail_sched?term_in=202002&crn_in=31568';
-let data = null;
+const INTERVAL = 30000; // half a min
+let classData = null;
+const keyNameMap = {
+  seatsCapacity: 'Class capacity',
+  seatsActual: 'Number of class seats taken',
+  seatsRemaining: 'Number of class seats remaining',
+  waitlistCapacity: 'Waitlist capacity',
+  waitlistActual: 'Number of waitlist spots taken',
+  waitlistRemaining: 'Number of waitlist spots remaining',
+};
 
-function getClassNumbers() {
-  return axios(URL).then(res => {
-    const html = res.data;
-    const $ = cheerio.load(html);
-
-    const elems = $('.dddefault');
-    return {
-      seatsCapacity: $(elems[1]).html(),
-      seatsActual: $(elems[2]).html(),
-      seatsRemaining: $(elems[3]).html(),
-      waitlistCapacity: $(elems[4]).html(),
-      waitlistActual: $(elems[5]).html(),
-      waitlistRemaining: $(elems[6]).html()
-    };
-  });
-  
+function getHelpText() {
+  const options = {
+    h: 'display this help text',
+    s: 'display current class seat numbers',
+    o: 'open the OSCAR page for this class',
+    e: 'exit blart'
+  };
+  const output = `usage: input these keys into the console.\n${Object.entries(options).map(([k, v]) => `${k}: ${v}`).join('\n')}`;
+  return output;
 }
 
-function checkSite() {
-  getClassNumbers().then((res) => {
-    let changed = false;
-    Object.entries(res).forEach(([key, val]) => {
-      if (data[key] !== val) {
-        console.log(`(${new Date()}) | ${key} | ${val}`)
-        changed = true;
-        // send email, or do something that results in notification, then...
-        data[key] = val;
+function getSeatText() {
+  const output = Object.entries(classData).map(([key, val]) => {
+    return `${keyNameMap[key]}: ${val}`;
+  }).join('\n');
+  return output;
+}
 
-        notifier.notify({
-          title: 'Something on OSCAR changed!',
-          message: 'Check the console, and check buzzport!',
-          sound: true, // Only Notification Center or Windows Toasters
-          wait: false
+function updateSeats(checkForChange) {
+  return getClassNumbers(URL).then((newRes) => {
+    if (checkForChange && classData != null) {
+      const changedKeys = Object.keys(newRes).filter((key) => classData[key] !== newRes[key]);
+      if (changedKeys.length > 0) {
+        console.log(`[${new Date()}] Keys changed: `);
+        changedKeys.forEach((key) => {
+          console.log(`${keyNameMap[key]}: changed from ${classData[key]} to ${newRes[key]}`);
         });
+        console.log('\n');
+        sendNotification(
+          'Something on OSCAR changed!',
+          'Check the console, and check buzzport!'
+        );
+      }
+    }
+    classData = newRes;
+  });
+}
+
+async function main() {
+  try {
+    console.log('Welcome to Blart!\nBlart is set to check for seat changes every ${INTERVAL / 1000} seconds.');
+    console.log(getHelpText() + '\n');
+    await updateSeats();
+    classData.waitlistCapacity = 21;
+    console.log(getSeatText() + '\n');
+
+    setInterval(() => { updateSeats(true) }, INTERVAL);
+
+    process.stdin.setRawMode(true);
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', async (key) => {
+      if (key === 'h') {
+        console.log(getHelpText() + '\n');
+      } else if (key === 's') {
+        await updateSeats(true);
+        console.log(getSeatText() + '\n');
+      } else if (key === 'o') {
+        openLink(URL);
+      } else if (key === 'e') {
+        process.exit(0);
       }
     });
-    if (!changed) {
-      // console.log('No updates detected.')
-    }
-  }).catch((err) => {
-    console.log(`(${new Date()}) Error happened:`, err, '\n\n');
-  });
-}
-
-async function main(resumeFile, config) {
-  // initial data
-  data = await getClassNumbers();
-
-  setIntervalImmediately(checkSite, INTERVAL);
-  // setIntervalImmediately(checkSite, 1500);
+  } catch (e) {
+    console.error('An error happened:', e);
+  }
 }
 
 main();
