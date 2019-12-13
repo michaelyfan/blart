@@ -56,10 +56,9 @@ function updateSeats(checkForChange) {
 
 async function main() {
   try {
-    console.log('Welcome to Blart!\nBlart is set to check for seat changes every ${INTERVAL / 1000} seconds.');
+    console.log(`Welcome to Blart!\nBlart is set to check for seat changes every ${Math.round(INTERVAL / 1000)} seconds.`);
     console.log(getHelpText() + '\n');
     await updateSeats();
-    classData.waitlistCapacity = 21;
     console.log(getSeatText() + '\n');
 
     setInterval(() => { updateSeats(true) }, INTERVAL);
